@@ -40,12 +40,39 @@ struct EmojiArtDocumentView: View {
                     }
                 }
             }
+            .clipped()
             .onDrop(of: [.plainText, .url, .image], isTargeted: nil) { providers, location in
                 drop(providers: providers,
                      at: location,
                      in: geometry)
             }
+            .gesture(zoomGesture())
         }
+    }
+        
+    @State private var steadyStateZoomScale: CGFloat = 1
+    
+    /// You can store whatever information you need for your View to update during the gesture
+    /// For example, during a drag, maybe you store how far the finger has moved
+    /// **IMPORTANT**: this var will always return to `starting value` when the gesture ends
+    @GestureState private var gestureZoomScale: CGFloat = 1 // 1 is `starting value`
+    
+    private var zoomScale: CGFloat {
+        steadyStateZoomScale * gestureZoomScale
+    }
+    
+    /// Note: when you're designing Gesture code,
+    /// the most important thing is to understand
+    /// what state is actually changing while the gesture is in flight!
+    private func zoomGesture() -> some Gesture {
+        MagnificationGesture()
+            .updating($gestureZoomScale, body: { latestGestureScale, ourGestureStateInOut, _ in
+                // This is the **ONLY** place you can change your @GestureState!
+                ourGestureStateInOut = latestGestureScale
+            })
+            .onEnded { gestureScaleAtEnd in
+                steadyStateZoomScale *= gestureScaleAtEnd
+            }
     }
     
     private func doubleTapToZoom(in size: CGSize) -> some Gesture {
@@ -56,8 +83,7 @@ struct EmojiArtDocumentView: View {
                 }
             }
     }
-    
-    @State private var zoomScale: CGFloat = 1
+
     private func zoomToFit(_ image: UIImage?, in size: CGSize) {
         if let image = image,
             image.size.width > 0,
@@ -67,7 +93,7 @@ struct EmojiArtDocumentView: View {
         {
             let hZoom = size.width / image.size.width
             let vZoom = size.height / image.size.height
-            zoomScale = min(hZoom, vZoom)
+            steadyStateZoomScale = min(hZoom, vZoom)
         }
     }
     
