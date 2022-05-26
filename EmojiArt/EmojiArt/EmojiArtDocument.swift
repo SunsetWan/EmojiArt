@@ -9,7 +9,13 @@ import SwiftUI
 
 /// ViewModel
 class EmojiArtDocument: ObservableObject {
-    @Published private(set) var emojiArt: EmojiArtModel
+    @Published private(set) var emojiArt: EmojiArtModel {
+        didSet {
+            if emojiArt.backgrund != oldValue.backgrund {
+                fetchBackgroundImageDataIfNecessary()
+            }
+        }
+    }
     
     init() {
         emojiArt = EmojiArtModel()
@@ -20,11 +26,44 @@ class EmojiArtDocument: ObservableObject {
     var emojis: [EmojiArtModel.Emoji] { emojiArt.emojis }
     var background: EmojiArtModel.Background { emojiArt.backgrund }
     
+    @Published var backgroundImage: UIImage?
+    @Published var backgroundImageFetchStatus: BackgroundImageFetchStatus = .idle
+    
+    enum BackgroundImageFetchStatus {
+        case idle
+        case fetching
+    }
+    
+    private func fetchBackgroundImageDataIfNecessary() {
+        backgroundImage = nil
+        switch emojiArt.backgrund {
+        case .url(let url):
+            // fetch the url
+            backgroundImageFetchStatus = .fetching
+            DispatchQueue.global(qos: .userInitiated).async {
+                let imageData = try? Data(contentsOf: url) // this will block UI
+                DispatchQueue.main.async { [weak self] in
+                    if self?.emojiArt.backgrund == .url(url) {
+                        self?.backgroundImageFetchStatus = .idle
+                        if let imageData = imageData {
+                            self?.backgroundImage = UIImage(data: imageData)
+                        }
+                    }
+                }
+            }
+        case .imageData(let data):
+            backgroundImage = UIImage(data: data)
+        case .blank:
+            break
+        }
+    }
+    
     
     /// MARK: - Intent(s)
     
     func setBackground(_ background: EmojiArtModel.Background) {
         emojiArt.backgrund = background
+        print("background set to \(background)")
     }
     
     func addEmoji(_ text: String,
