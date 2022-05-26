@@ -46,10 +46,29 @@ struct EmojiArtDocumentView: View {
                      at: location,
                      in: geometry)
             }
-            .gesture(zoomGesture())
+            /// Note: never putting more than one `.gesture` on any one View simultaneously!
+            .gesture(panGesture().simultaneously(with: zoomGesture()))
         }
     }
-        
+    
+    @State private var steadyStatePanOffset: CGSize = .zero
+    @GestureState private var gesturePanOffset: CGSize = .zero
+    
+    private var panOffset: CGSize {
+        (steadyStatePanOffset + gesturePanOffset) * zoomScale
+    }
+    
+    private func panGesture() -> some Gesture {
+        DragGesture()
+            .updating($gesturePanOffset, body: { latestDragGestureValue, gesturePanOffsetInOut, _ in
+                    gesturePanOffsetInOut = latestDragGestureValue.translation / zoomScale
+            })
+            .onEnded { finalDragGestureValue in
+                steadyStatePanOffset = steadyStatePanOffset + (finalDragGestureValue.translation / zoomScale)
+            }
+    }
+    
+
     @State private var steadyStateZoomScale: CGFloat = 1
     
     /// You can store whatever information you need for your View to update during the gesture
@@ -93,6 +112,7 @@ struct EmojiArtDocumentView: View {
         {
             let hZoom = size.width / image.size.width
             let vZoom = size.height / image.size.height
+            steadyStatePanOffset = .zero
             steadyStateZoomScale = min(hZoom, vZoom)
         }
     }
@@ -136,8 +156,10 @@ struct EmojiArtDocumentView: View {
                                            in geometry: GeometryProxy) -> (x: Int, y: Int)
     {
         let center = geometry.frame(in: .local).center
-        let location = CGPoint(x: (location.x - center.x) / zoomScale,
-                               y: (location.y - center.y) / zoomScale)
+        let location = CGPoint(
+            x: (location.x - panOffset.width - center.x) / zoomScale,
+            y: (location.y - panOffset.height - center.y) / zoomScale
+        )
         
         return (Int(location.x), Int(location.y))
     }
@@ -146,8 +168,10 @@ struct EmojiArtDocumentView: View {
                                              in geometry: GeometryProxy) -> CGPoint
     {
         let center = geometry.frame(in: .local).center
-        return CGPoint(x: center.x + CGFloat(location.x) * zoomScale,
-                       y: center.y + CGFloat(location.y) * zoomScale)
+        return CGPoint(
+            x: center.x + CGFloat(location.x) * zoomScale + panOffset.width,
+            y: center.y + CGFloat(location.y) * zoomScale + panOffset.height
+        )
     }
     
     
