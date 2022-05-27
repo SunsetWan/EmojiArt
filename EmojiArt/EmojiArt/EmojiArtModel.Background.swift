@@ -8,10 +8,17 @@
 import Foundation
 
 extension EmojiArtModel {
-    enum Background: Equatable {
+    /// 🔗：https://sarunw.com/posts/codable-synthesis-for-enums-with-associated-values-in-swift/
+    enum Background: Equatable, Codable {
         case blank
         case url(URL)
         case imageData(Data)
+        
+        private enum CodingKeys: String, CodingKey {
+            case blank
+            case url = "theURL"
+            case imageData
+        }
         
         var url: URL? {
             switch self {
