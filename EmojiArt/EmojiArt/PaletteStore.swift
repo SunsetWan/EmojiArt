@@ -53,6 +53,8 @@ class PaletteStore: ObservableObject {
             insertPalette(named: "all", emojis: "🤡👐🙌👹👽👺🎃😼🧠👣👀🗣🫀🫁🫂👩‍🦳👱‍♂️👶🧔‍♀️👮‍♀️👮👷‍♀️💂‍♀️👩‍⚕️🕵️👩‍🎓👨‍🍳👨‍🎤👩‍🏭🐧🐵🐥🐣🐒🐸🦊🐼🦐🐟🦭🦈🐆🦧🌵")
             insertPalette(named: "faces", emojis: "🤯😳🥵🥶😶‍🌫️")
             insertPalette(named: "joker", emojis: "👺🤡💩👻💀")
+            insertPalette(named: "cars", emojis: "🚗🚕🚙🚌🚎🚐🚒🚑🚓🏎🛻🚚🚛🚜")
+            insertPalette(named: "sports", emojis: "⚽️🏀🏈⚾️🥎🎱🥏🏉🏐🎾")
         } else {
             print("Successfully loaded palettds from UserDefaults: \(palettes)")
         }
