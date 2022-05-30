@@ -12,11 +12,30 @@ struct PaletteChooser: View {
     var emojiFont: Font { .system(size: emojiFontSize) }
     
     @EnvironmentObject var store: PaletteStore
+    @State private var chosenPaletteIndex = 0
     
     var body: some View {
-        let palette = store.palette(at: 3)
+        HStack {
+            paletteControlButton
+            body(for: store.palette(at: chosenPaletteIndex))
+        }
+    }
+    
+    var paletteControlButton: some View {
+        Button {
+            withAnimation {
+                chosenPaletteIndex = (chosenPaletteIndex + 1) % store.palettes.count
+            }
+        } label: {
+            Image(systemName: "paintpalette")
+                .font(.largeTitle)
+        }
+    }
+    
+    private func body(for palette: Palette) -> some View {
         HStack {
             Text(palette.name)
+                .frame(alignment: .center)
             ScrollingEmojisView(emojis: palette.emojis)
                 .font(.system(size: emojiFontSize))
         }
