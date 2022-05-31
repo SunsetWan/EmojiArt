@@ -48,7 +48,30 @@ struct EmojiArtDocumentView: View {
             }
             /// Note: never putting more than one `.gesture` on any one View simultaneously!
             .gesture(panGesture().simultaneously(with: zoomGesture()))
+            .alert(item: $alertToShow) { alertToShow in
+                alertToShow.alert()
+            }
+            .onChange(of: document.backgroundImageFetchStatus) { status in
+                switch status {
+                case .failed(let url):
+                    showBackgroundImageFetchFailedAlert(url)
+                default:
+                    break
+                }
+            }
         }
+    }
+    
+    @State private var alertToShow: IdentifiableAlert?
+    private func showBackgroundImageFetchFailedAlert(_ url: URL) {
+        alertToShow = IdentifiableAlert(id: "fetch failed" + url.absoluteString,
+                                        alert: {
+            Alert(
+                title: Text("Background Image Fetch"),
+                message: Text("Couldn't load image from \(url)"),
+                dismissButton: .cancel(Text("OK"))
+            )
+        })
     }
     
     @State private var steadyStatePanOffset: CGSize = .zero
