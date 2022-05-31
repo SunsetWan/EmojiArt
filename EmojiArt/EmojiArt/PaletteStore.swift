@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// Model
-struct Palette: Identifiable, Codable {
+struct Palette: Identifiable, Codable, Hashable {
     let id: Int
     var name: String
     var emojis: String
