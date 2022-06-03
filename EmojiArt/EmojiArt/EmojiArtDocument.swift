@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 /// ViewModel
 class EmojiArtDocument: ObservableObject {
@@ -81,26 +82,47 @@ class EmojiArtDocument: ObservableObject {
         case failed(URL)
     }
     
+    private var backgroundImageFetchCancellable: AnyCancellable?
+    
     private func fetchBackgroundImageDataIfNecessary() {
         backgroundImage = nil
         switch emojiArt.backgrund {
         case .url(let url):
             // fetch the url
             backgroundImageFetchStatus = .fetching
-            DispatchQueue.global(qos: .userInitiated).async {
-                let imageData = try? Data(contentsOf: url) // this will block UI
-                DispatchQueue.main.async { [weak self] in
-                    if self?.emojiArt.backgrund == .url(url) {
-                        self?.backgroundImageFetchStatus = .idle
-                        if let imageData = imageData {
-                            self?.backgroundImage = UIImage(data: imageData)
-                        }
-                        if self?.backgroundImage == nil {
-                            self?.backgroundImageFetchStatus = .failed(url)
-                        }
-                    }
-                }
-            }
+            
+            /// The brand new way to prevent
+            backgroundImageFetchCancellable?.cancel()
+            
+            let session = URLSession.shared
+            
+            /// If a publisher has no subscribers left,
+            /// It will go away and stop
+            let publisher = session.dataTaskPublisher(for: url)
+                .map { (data, urlResponse) in UIImage(data: data) }
+                .replaceError(with: nil)
+                .receive(on: DispatchQueue.main)
+            
+            backgroundImageFetchCancellable = publisher
+//                .assign(to: \EmojiArtDocument.backgroundImage, on: self) // This can't help set `backgroundImageFetchStatus`!!!
+                .sink(receiveValue: { [weak self] image in // This closure exec on background thread by default, except use `.receive(on: DispatchQueue.main)`
+                    self?.backgroundImageFetchStatus = (image != nil) ? .idle : .failed(url)
+                })
+            
+//            DispatchQueue.global(qos: .userInitiated).async {
+//                let imageData = try? Data(contentsOf: url) // this will block UI
+//                DispatchQueue.main.async { [weak self] in
+//                    if self?.emojiArt.backgrund == .url(url) {
+//                        self?.backgroundImageFetchStatus = .idle
+//                        if let imageData = imageData {
+//                            self?.backgroundImage = UIImage(data: imageData)
+//                        }
+//                        if self?.backgroundImage == nil {
+//                            self?.backgroundImageFetchStatus = .failed(url)
+//                        }
+//                    }
+//                }
+//            }
         case .imageData(let data):
             backgroundImage = UIImage(data: data)
         case .blank:
