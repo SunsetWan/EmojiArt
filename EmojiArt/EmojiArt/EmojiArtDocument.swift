@@ -73,6 +73,10 @@ class EmojiArtDocument: ObservableObject {
     var emojis: [EmojiArtModel.Emoji] { emojiArt.emojis }
     var background: EmojiArtModel.Background { emojiArt.backgrund }
     
+    /// For `@Published`, the $ version of them is a Publisher that published this.
+    /// So every time this backgroundImage changes,
+    /// this `@Published` thing makes it,
+    /// so that the $ of this is publishing it, constantly publishing it.
     @Published var backgroundImage: UIImage?
     @Published var backgroundImageFetchStatus: BackgroundImageFetchStatus = .idle
     
